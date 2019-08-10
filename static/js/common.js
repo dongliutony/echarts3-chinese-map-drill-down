@@ -108,7 +108,7 @@ function getPrefixUrlPath() {
 //跳转前缀url
 let baseUrl = getPrefixUrlPath()
 let argTmonth = '&tmonth=' + searchtime
-let getProvNumberUrl = '/mock/provice.json'
+let getProvNumberUrl = 'mock/province.json'
 let getCityNumberUrl = '/mock/city/'
 let getAreaNumberUrl = '/mock/area/'
 
@@ -158,7 +158,7 @@ tree.oncontextmenu = function() {
 
 function ajaxRequest(url, searchtime, postData = '') {
   let data = {
-    key: '2b029d40d498184def791ff46e189670',
+    key: 'key',
     searchtime: searchtime
   }
   data[postData['parentid']] = postData['value']
@@ -167,11 +167,24 @@ function ajaxRequest(url, searchtime, postData = '') {
   // console.log("ajaxdata", data);
   return $.ajax({
     url,
-    method: 'POST',
+    method: 'GET',
     dataType: 'json',
     headers: {
-      'content-type': 'application/x-www-form-urlencoded'
+      'content-type': 'application/json'
     },
     data: data
   })
+}
+
+
+function stringToJson(data) {
+  let result = Object.create(null)
+  if (Object.prototype.toString.call(data) !== '[object Object]') {
+    try {
+      result = JSON.parse(data)
+    } catch {
+      throw TypeError('数据转换成JSON出错')
+    }
+  }
+  return result
 }
