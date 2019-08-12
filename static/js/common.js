@@ -111,6 +111,7 @@ let argTmonth = '&tmonth=' + searchtime
 let getProvNumberUrl = 'mock/province.json'
 let getCityNumberUrl = '/mock/city/'
 let getAreaNumberUrl = '/mock/area/'
+let getRegionPreMonthCusUrl = ''
 
 /** 获取全国省份客户数、销售额 */
 let customerNum = []
