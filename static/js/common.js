@@ -158,6 +158,7 @@ tree.oncontextmenu = function() {
 }
 
 function ajaxRequest(url, searchtime, postData = '') {
+  searchtime = searchtime || searchtime
   let data = {
     key: 'key',
     searchtime: searchtime

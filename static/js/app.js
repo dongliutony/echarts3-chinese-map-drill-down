@@ -36,7 +36,6 @@ function loadMap(searchtime) {
     /**获取省份数据*/
     Promise.all([ajaxRequest(getProvNumberUrl, searchtime)]).then(
       result => {
-        
         curMonthResult = stringToJson(result[0])
         if (curMonthResult.errcode == 1) {
           /**通过id关联地图上对应位置的数据 */
@@ -54,7 +53,6 @@ function loadMap(searchtime) {
         }
         //获取最大值，并排序
         let maxData = getMaxDataAndSort(customerNum)
-        console.log('TCL: loadMap -> customerNum', customerNum)
         //绘制地图，拿到数据后再渲染一次
         renderMap(mapName, data, customerNum, maxData.maxData)
         getRegionPreMonthRatio(maxData.maxDataId, searchtime)
@@ -81,14 +79,8 @@ chart.on('click', function(params) {
       }
       Promise.all([ajaxRequest(getCityNumberUrl, searchtime, postData2)]).then(
         result => {
-          let curMonthResult = Object.create(null)
-          if (Object.prototype.toString.call(result[0]) !== '[object Object]') {
-            try {
-              curMonthResult = JSON.parse(result[0])
-            } catch {
-              throw TypeError('数据转换成JSON出错')
-            }
-          }
+          let curMonthResult = stringToJson(result[0])
+          
           if (curMonthResult.errcode == 1) {
             getAreaNumber(params.name, curMonthResult.msg[0].cityid, searchtime)
           }
@@ -131,13 +123,9 @@ chart.on('click', function(params) {
           ajaxRequest(getAreaNumberUrl, searchtime, postData3)
         ]).then(
           result => {
-            let [curMonthResult, lastMonthData] = result
-            let tmp = []
-            if (curMonthResult.errcode == 1) {
-              // console.log('204', res.msg[0].cityid, res.msg[0].city)
-              //这里传递的城市名有问题“北京市”，渲染地图的名字是“北京”，所以地图名要用原来的名字渲染
-              getAreaNumber(params.name, params.data.cityid, searchtime)
-            }
+            // console.log('204', res.msg[0].cityid, res.msg[0].city)
+            //这里传递的城市名有问题“北京市”，渲染地图的名字是“北京”，所以地图名要用原来的名字渲染
+            getAreaNumber(params.name, params.data.cityid, searchtime)
           },
           error => {
             console.log('请求市级数据失败', e)
@@ -197,50 +185,6 @@ function goBack() {
   renderMap(map.mapName, map.mapJson, map.sortData, map.colorMax)
 }
 
-// 图例开关的行为只会触发 legendselectchanged 事件
-// chart.on("legendselectchanged", function(params) {
-//   console.log('407',params)
-//   // 获取点击图例的选中状态
-//   var isSelected = params.selected[params.name];
-//   // 在控制台中打印 ["客户数量(人)", "客户数环比", "销售额(元)", "销售额环比数据"],
-//   console.log((isSelected ? "选中了" : "取消选中了") + "图例" +params.name);
-//   switch (params.name) {
-//     case "客户数环比":
-//       window.location.href =
-//         "http://192.168.0.147/echarts/customer/customerRatioMap.html";
-//       break;
-//     case "销售额(元)":
-//       window.location.href =
-//         "http://192.168.0.147/echarts/customer/saleDataMap.html";
-//       break;
-//     case "销售额环比数据":
-//       window.location.href =
-//         "http://192.168.0.147/echarts/customer/saleRatioMap.html";
-//       break;
-//     default:
-//       break;
-//   }
-//   // 打印所有图例的状态
-//   console.log(params.selected);
-// });
-
-$('#cus-num').on('click', function() {
-  window.location.href = '#'
-  window.event.returnValue = false
-})
-$('#cus-percent').on('click', function() {
-  window.location.href = baseUrl + 'customerRatioMap' + argTmonth
-  window.event.returnValue = false //不加这个无法跳转
-})
-$('#sale-count').on('click', function() {
-  window.location.href = baseUrl + 'saleDataMap' + argTmonth
-  window.event.returnValue = false
-})
-$('#sale-percent').on('click', function() {
-  window.location.href = baseUrl + 'saleRatioMap' + argTmonth
-  window.event.returnValue = false
-})
-
 /**
  *
  * @param {地图标题} map
@@ -270,6 +214,7 @@ function renderMap(map, mapJson, customerNum, colorMax = 1500) {
         fontFamily: 'Microsoft YaHei'
       }
     },
+    // 鼠标 hover 折线图
     // tooltip: {
     //   padding: 0,
     //   enterable: false,
@@ -469,36 +414,24 @@ function getCityNumber(name, id, searchtime, data) {
   }
   Promise.all([ajaxRequest(getCityNumberUrl, searchtime, postData2)]).then(
     result => {
-      // let [curMonthResult, lastMonthResult] = result
-      curMonthResult = stringToJson(result[0])
-      let tmp = []
-      if (curMonthResult.errcode == 1) {
-        citySaleData = []
-        for (let i = 0; i < curMonthResult.msg.length; i++) {
-          tmp.push({
-            cityid: curMonthResult.msg[i].cityid, //需要加上cityid传递渲染，下一级地图渲染需要用到
-            name: curMonthResult.msg[i].city,
-            value: curMonthResult.msg[i].num
-          })
+      Promise.all([ajaxRequest(getCityNumberUrl + id + '.json')]).then(resp => {
+        curMonthResult = stringToJson(resp[0])
+        let tmp = []
+        if (curMonthResult.errcode == 1) {
+          citySaleData = []
+          for (let i = 0; i < curMonthResult.msg.length; i++) {
+            tmp.push({
+              cityid: curMonthResult.msg[i].cityid, //需要加上cityid传递渲染，下一级地图渲染需要用到
+              name: curMonthResult.msg[i].city,
+              value: curMonthResult.msg[i].num
+            })
+          }
+
+          let maxData = getMaxDataAndSort(tmp)
+          renderMap(name, data, tmp, maxData.maxData)
+          getRegionPreMonthRatio(maxData.maxDataId, searchtime)
         }
-        // if (lastMonthResult) {
-        //   if (lastMonthResult.errcode == 1) {
-        //     customerNum.forEach(function(val) {
-        //       lastMonthResult.msg.forEach(function(val2, index) {
-        //         if (val.id == val2.provinceid) {
-        //           linkRelativeRatio.push({
-        //             name: val.name,
-        //             value: val.value / val2.num
-        //           })
-        //         }
-        //       })
-        //     })
-        //   }
-        // }
-        let maxData = getMaxDataAndSort(tmp)
-        renderMap(name, data, tmp, maxData.maxData)
-        getRegionPreMonthRatio(maxData.maxDataId, searchtime)
-      }
+      })
     },
     error => {
       console.log('请求市级数据失败', e)
@@ -520,36 +453,27 @@ function getAreaNumber(cityName, cityId, searchtime, data) {
   }
   Promise.all([ajaxRequest(getAreaNumberUrl, searchtime, postData3)]).then(
     result => {
-      let [curMonthResult, lastMonthResult] = result
-      let tmp = []
-      if (curMonthResult.errcode == 1) {
-        areaSaleData = []
-        for (let i = 0; i < curMonthResult.msg.length; i++) {
-          // 返回是一个数组，array({id: 1954, areaid: "440301", area: "深圳市", num: 0})
-          tmp.push({
-            areaid: curMonthResult.msg[i].areaid,
-            name: curMonthResult.msg[i].area,
-            value: curMonthResult.msg[i].num
-          })
-        }
-        if (lastMonthResult) {
-          if (lastMonthResult.errcode == 1) {
-            customerNum.forEach(function(val) {
-              lastMonthResult.msg.forEach(function(val2, index) {
-                if (val.id == val2.provinceid) {
-                  linkRelativeRatio.push({
-                    name: val.name,
-                    value: val.value / val2.num
-                  })
-                }
+      Promise.all([ajaxRequest(getAreaNumberUrl + cityId + '.json')]).then(
+        resp => {
+          curMonthResult = stringToJson(resp[0])
+          let tmp = []
+          if (curMonthResult.errcode == 1) {
+            areaSaleData = []
+            for (let i = 0; i < curMonthResult.msg.length; i++) {
+              // 返回是一个数组，array({id: 1954, areaid: "440301", area: "深圳市", num: 0})
+              tmp.push({
+                areaid: curMonthResult.msg[i].areaid,
+                name: curMonthResult.msg[i].area,
+                value: curMonthResult.msg[i].num
               })
-            })
+            }
+
+            let maxData = getMaxDataAndSort(tmp)
+            renderMap(cityName, data, tmp, maxData.maxData)
+            getRegionPreMonthRatio(maxData.maxDataId, searchtime)
           }
         }
-        let maxData = getMaxDataAndSort(tmp)
-        renderMap(cityName, data, tmp, maxData.maxData)
-        getRegionPreMonthRatio(maxData.maxDataId, searchtime)
-      }
+      )
     },
     error => {
       console.log('获取县区数据失败', e)
@@ -614,7 +538,6 @@ function getMaxDataAndSort(originData) {
   for (let i = 0; i < sortData.length; i++) {
     titledata.push(sortData[i].name)
   }
-  // areaList = sortData.slice().reverse()
   areaList = [...sortData].reverse()
   console.log(sortData)
   vm.setAreaList(areaList)
@@ -634,7 +557,7 @@ $('#select-date').change(function() {
 })
 
 /**
- * 异步获取地区月份数据
+ * @param 折线图 异步获取地区月份数据
  */
 function getRegionPreMonthRatio(region, year) {
   let tmp = []
