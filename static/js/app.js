@@ -66,9 +66,12 @@ function loadMap(searchtime) {
 
 //地图单击事件
 chart.on('click', function(params) {
+  let allowDrillObj = { id: true, cityid: true }
+  if (!(params.data.id || params.data.cityid)) {
+    return
+  }
   //隐藏右键返回菜单
   $('#contextMenu').hide()
-  let tmpObj = {}
   let d = []
   if (params.name in provinces) {
     //二级直辖市数据渲染
@@ -80,7 +83,6 @@ chart.on('click', function(params) {
       Promise.all([ajaxRequest(getCityNumberUrl, searchtime, postData2)]).then(
         result => {
           let curMonthResult = stringToJson(result[0])
-          
           if (curMonthResult.errcode == 1) {
             getAreaNumber(params.name, curMonthResult.msg[0].cityid, searchtime)
           }
@@ -141,7 +143,7 @@ chart.on('click', function(params) {
   if (special.indexOf(params.seriesName) == -1) {
     n = 2
   }
-  //TODO  2级下钻会有问题
+  //FiX:  2级下钻会有问题， 函数顶部加入下钻层级判断
   if (mapStack.length < n) {
     //将上一级地图信息压入mapStack
     mapStack.push({
@@ -176,7 +178,6 @@ function goBack() {
   let map = mapStack.pop()
   if (!map) {
     console.log('没有入栈数据')
-    // alert('已经到达最上一级地图了');
     return
   }
   echarts.registerMap(map.mapName, map.mapJson)
@@ -397,7 +398,6 @@ function renderMap(map, mapJson, customerNum, colorMax = 1500) {
     sortData: sortData,
     titledata: titledata
   }
-  console.log('curMap', curMap)
 }
 
 /**
@@ -408,6 +408,9 @@ function renderMap(map, mapJson, customerNum, colorMax = 1500) {
  * @param {地图json数据} data
  */
 function getCityNumber(name, id, searchtime, data) {
+  if (!id) {
+    return
+  }
   let postData2 = {
     parentid: 'provinceid',
     value: id
@@ -509,10 +512,8 @@ let vm = new Vue({
       }
       //TODO 取消不请求数据
       if ($_self._data.time > $_self._data.otime) {
-        // getRegionPreMonthRatio(val.slice(-1)[0], "2016");
         getRegionPreMonthRatio(val, $_self._data.searchtime)
       }
-      console.log(val, oldVal)
     }
   }
 })
@@ -539,9 +540,7 @@ function getMaxDataAndSort(originData) {
     titledata.push(sortData[i].name)
   }
   areaList = [...sortData].reverse()
-  console.log(sortData)
   vm.setAreaList(areaList)
-  console.log('areaList', areaList)
   return {
     maxDataId,
     maxData
@@ -570,10 +569,8 @@ function getRegionPreMonthRatio(region, year) {
   Promise.all([ajaxRequest(getRegionPreMonthCusUrl, '', postRegion)])
     .then(
       res => {
-        console.log(res[0].msg, res)
         let [allMonthResult] = res
         if (allMonthResult.errcode === 1) {
-          console.log(allMonthResult.data)
           for (let i = 0; i < allMonthResult.data.region.length; i++) {
             tmp.push(Math.round(allMonthResult.data.region[i].customer_num))
             tmp2.push(
@@ -582,9 +579,6 @@ function getRegionPreMonthRatio(region, year) {
             tmpMonth.push(allMonthResult.data.region[i].time)
           }
         }
-        console.log('tmpMonth', tmpMonth)
-        console.log('tmp', tmp)
-        console.log('tmp2', tmp2)
         let option = {
           tooltip: {
             trigger: 'axis'
@@ -600,19 +594,15 @@ function getRegionPreMonthRatio(region, year) {
           level_region: tmp2
         }
         sessionStorage.setItem(region, JSON.stringify(tmpSession))
-        console.log(sessionStorage.getItem(region))
         return [
           allMonthResult.data.region_name,
           allMonthResult.data.level_name,
           option
         ]
       },
-      error => {
-        console.log('拿不到数据')
-      }
+      error => {}
     )
     .then(res => {
-      console.log('第一个then返回的数据', res)
       if (res) {
         loadLineTrend(res[0], res[1] + '平均')
         modalChart.setOption(res[3])
