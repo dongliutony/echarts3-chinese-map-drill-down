@@ -121,18 +121,9 @@ chart.on('click', function(params) {
           parentid: 'cityid',
           value: params.data.cityid
         }
-        Promise.all([
-          ajaxRequest(getAreaNumberUrl, searchtime, postData3)
-        ]).then(
-          result => {
-            // console.log('204', res.msg[0].cityid, res.msg[0].city)
-            //这里传递的城市名有问题“北京市”，渲染地图的名字是“北京”，所以地图名要用原来的名字渲染
-            getAreaNumber(params.name, params.data.cityid, searchtime)
-          },
-          error => {
-            console.log('请求市级数据失败', e)
-          }
-        )
+        // console.log('204', res.msg[0].cityid, res.msg[0].city)
+        //这里传递的城市名有问题“北京市”，渲染地图的名字是“北京”，所以地图名要用原来的名字渲染
+        getAreaNumber(params.name, params.data.cityid, searchtime)
       }
     })
   }

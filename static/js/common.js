@@ -173,8 +173,7 @@ function ajaxRequest(url, searchtime, postData = '') {
     dataType: 'json',
     headers: {
       'content-type': 'application/json'
-    },
-    data: data
+    }
   })
 }
 
