@@ -3,7 +3,14 @@ Echarts3中国地图下钻至县级
 
 预览地址：https://touxing.github.io/echarts3-chinese-map-drill-down/index.html
 
-![map drill down](./static/img/map.gif)
+![map drill down](./static/img/map2.gif)
+
+## 运行项目
+
+### git clone 项目
+
+### 在根目录启动一个web服务器访问
+使用vscode的同学可以直接用 `Go Live` 插件
 
 ## 更新（2019-8-12）
 
